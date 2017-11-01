@@ -1,7 +1,7 @@
 __precompile__()
 module TSConditioning
 
-using DSP
+using DSP, GLUtilities
 
 export
     hpf,
@@ -11,24 +11,26 @@ export
     gaussian_kernel,
     rescale,
     filtfilt_mmap,
+    filtfilt_mmap_path,
+    filtfilt_stream!,
+    filtfilt_stream,
+    filtfilt_stream_path,
     rev_view
 
 rev_view(a::AbstractVector) = @view a[end:-1:1]
 
-function typemmap(::Type{A}, dims::NTuple{N, Int}) where {A<:AbstractArray, N}
-    (path, io) = mktemp()
+function typemmap(::Type{A}, dims::NTuple{N, Int}, basedir::AbstractString = tempdir()) where {A<:AbstractArray, N}
+    (path, io) = mktemp(basedir)
     arr = try
         Mmap.mmap(io, A, dims; grow = true)
     finally
-        close(io) # Can still write to array
-        rm(path) # File will remain accessible to this process
+        close(io)
     end
-    return arr
+    return (arr, path)
 end
 typemmap(a::A) where A<:AbstractArray = typemmap(A, size(a))
 
-
-function filtfilt_mmap(b::AbstractVector, x::AbstractVector)
+function filtfilt_mmap(b::AbstractVector, x::AbstractVector, basedir::AbstractString = tempdir())
     nb = length(b)
     # Only need as much padding as the order of the filter
     # Convolve b with its reverse
@@ -40,22 +42,87 @@ function filtfilt_mmap(b::AbstractVector, x::AbstractVector)
 
     # Extrapolate signal
     T = Base.promote_eltype(b, x)
-    extrapolated = typemmap(Vector{T}, (length(x) + 2 * nb - 2,))
-    DSP.Filters.extrapolate_signal!(extrapolated, 1, x, 1, length(x), nb - 1)
+    exp_len = length(x) + 2 * nb - 2;
+    (extrapolated, extr_path) = typemmap(Vector{T}, (exp_len,), basedir)
+    (filtered, filt_path) = try
+        DSP.Filters.extrapolate_signal!(extrapolated, 1, x, 1, length(x), nb - 1)
 
-    # Filter
-    filtered = typemmap(Vector{T}, (length(x) + 2 * nb - 2,))
-    filt!(filtered, newb, extrapolated)
-    out = @view filtered[(2 * nb -1):end]
-    return out
+        # Filter
+        (filtered, filt_path) = typemmap(Vector{T}, (length(x) + 2 * nb - 2,), basedir)
+        atexit(() -> rm(filt_path))
+        filt!(filtered, newb, extrapolated)
+        (filtered, filt_path)
+    finally
+        rm(extr_path)
+    end
+    offset = 2 * nb - 2
+    out = @view filtered[(1 + offset):end]
+    return (out, filt_path, offset)
 end
 function filtfilt_mmap(
     x::AbstractVector,
-    fs::Number;
+    fs::Number,
+    args...;
     fc::AbstractFloat = 800.0,
     win = hamming(91)
 )
-    return filtfilt_mmap(make_hpf_taps(fc, fs; win = win), x)
+    return filtfilt_mmap(make_hpf_taps(fc, fs; win = win), x, args...)
+end
+
+function filtfilt_mmap_path(args...; kwargs...)
+    (arr, path, offset) = filtfilt_mmap(args...; kwargs...)
+    l = length(arr)
+    adj_l = l - offset
+    return (path, typeof(arr), adj_l, offset * sizeof(eltype(arr)))
+end
+
+function filtfilt_stream!(
+    sout::TOut,
+    f::FIRFilter,
+    sigin::TIn;
+    blocksize::Integer = 1024
+) where {TOut <: AbstractVector, TIn <: AbstractVector}
+    # Condition filter
+    nb = length(f.h)
+    nh = length(f.h)
+    @assert length(sout) > nh "Must be at least nh"
+    buff = TOut(blocksize)
+    _filtfilt_stream!(sout, f, sigin, nh, buff)
+    _filtfilt_stream!(rev_view(sout), f, rev_view(sout), nh, buff)
+end
+
+function _filtfilt_stream!(sout, f, sigin, nh, buff)
+    blocksize = length(buff)
+    ns = length(sigin)
+    # warm filter state to steady state
+    filt!(view(buff, 1:nh), f, 2 * sigin[1] .+ view(sigin, (nh + 1):-1:2))
+
+    # Filter the data in blocks
+    nfullbin = fld(ns, blocksize)
+    for binno in 1:nfullbin
+        bbounds = bin_bounds(binno, blocksize)
+        filt!(buff, f, view(sigin, bbounds[1]:bbounds[2]))
+        sout[bbounds[1]:bbounds[2]] = buff
+    end
+    if ns % blocksize > 0
+        bbounds = bin_bounds(nfullbin + 1, blocksize, ns)
+        ntrail = n_ndx(bbounds...)
+        filt!(view(buff, 1:ntrail), f, view(sigin, bbounds[1]:bbounds[2]))
+        sout[bbounds[1]:bbounds[2]] = buff[1:ntrail]
+    end
+end
+
+function filtfilt_stream(f::FIRFilter, x::AbstractVector, basedir::AbstractString = pwd(); kwargs...)
+    T = Base.promote_eltype(f.h, x)
+    (out, out_path) = typemmap(Vector{T}, (length(x),), basedir)
+    filtfilt_stream!(out, f, x; kwargs...)
+    return (out, out_path)
+end
+filtfilt_stream(f::AbstractVector, args...; kwargs...) = filtfilt_stream(FIRFilter(f), args...; kwargs...)
+
+function filtfilt_stream_path(args...; kwargs...)
+    (out, path) = filtfilt_stream(args...; kwargs...)
+    return (path, typeof(out), length(out))
 end
 
 function hpf(s::AbstractArray, fs::Number; fc::AbstractFloat = 800, win = hamming(91))
