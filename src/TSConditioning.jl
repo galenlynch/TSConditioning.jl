@@ -15,7 +15,29 @@ export
     filtfilt_stream!,
     filtfilt_stream,
     filtfilt_stream_path,
-    rev_view
+    rev_view,
+    center,
+    cxcorr,
+    norm_sig_xcorr!,
+    norm_sig_xcorr,
+    normxcorr
+
+center(x::AbstractArray) = x .- mean(x)
+
+cxcorr(u, v) = xcorr(center(u), center(v))
+
+function norm_sig_xcorr!(a, u)
+    um = mean(u)
+    uvar = std(u; corrected = false) * sqrt(length(u))
+    return (u .- um) ./ uvar
+end
+
+function norm_sig_xcorr(u)
+    a = similar(u)
+    return norm_sig_xcorr!(a, u)
+end
+
+normxcorr(u, v) = xcorr(norm_sig_xcorr(u), norm_sig_xcorr(v))
 
 rev_view(a::AbstractVector) = @view a[end:-1:1]
 
@@ -126,7 +148,7 @@ function filtfilt_stream_path(args...; kwargs...)
 end
 
 function hpf(s::AbstractArray, fs::Number; fc::AbstractFloat = 800, win = hamming(91))
-    df = make_hpf_taps(fc, fs, win)
+    df = make_hpf_taps(fc, fs; win = win)
     return filtfilt(df, s)
 end
 
@@ -135,7 +157,7 @@ function make_hpf_taps(fc::AbstractFloat, fs; win = hamming(91))
     designmethod = FIRWindow(win)
     return digitalfilter(resp, designmethod)
 end
-make_hpf_taps(fc, args...; kwargs...) = make_hpf_taps(convert(Float64, fc), args...;kwargs...)
+make_hpf_taps(fc, fs; kwargs...) = make_hpf_taps(convert(Float64, fc), fs; kwargs...)
 
 function same_conv_indices(a::Integer, b::Integer)
     offset = floor(Int, (b - 1) / 2)
