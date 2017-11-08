@@ -17,27 +17,38 @@ export
     filtfilt_stream_path,
     rev_view,
     center,
-    cxcorr,
+    xcorr_centered,
     norm_sig_xcorr!,
     norm_sig_xcorr,
-    normxcorr
+    xcorr_normed,
+    xcorr_ndx_lag,
+    xcorr_lags,
+    xcorr_best_lag
 
 center(x::AbstractArray) = x .- mean(x)
 
-cxcorr(u, v) = xcorr(center(u), center(v))
+xcorr_centered(u, v) = xcorr(center(u), center(v))
 
 function norm_sig_xcorr!(a, u)
     um = mean(u)
     uvar = std(u; corrected = false) * sqrt(length(u))
-    return (u .- um) ./ uvar
+    a .= u .- um ./ uvar
 end
 
 function norm_sig_xcorr(u)
     a = similar(u)
-    return norm_sig_xcorr!(a, u)
+    norm_sig_xcorr!(a, u)
+    return a
 end
 
-normxcorr(u, v) = xcorr(norm_sig_xcorr(u), norm_sig_xcorr(v))
+xcorr_normed(u, v) = xcorr(norm_sig_xcorr(u), norm_sig_xcorr(v))
+
+xcorr_ndx_lag(ndx::Integer, xc_len::Integer) = ndx - cld(xc_len, 2)
+
+xcorr_lags(sig_len::Integer) = -(sig_len-1):(sig_len-1)
+xcorr_lags(a::AbstractVector) = xcorr_lags(length(a))
+
+xcorr_best_lag(xc::AbstractArray) = xcorr_ndx_lag(indmax(xc), length(xc))
 
 rev_view(a::AbstractVector) = @view a[end:-1:1]
 
