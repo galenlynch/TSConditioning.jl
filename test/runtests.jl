@@ -20,7 +20,7 @@ const A = rand(200)
         end
     end
 
-    @teset "filt" begin
+    @testset "filt" begin
         make_hpf_taps(800, 2000)
         hpf(A, 2000)
     end

@@ -93,17 +93,22 @@ function filtfilt_stream_path(args...; kwargs...)
     return (path, typeof(out), length(out))
 end
 
-function hpf(s::AbstractArray, fs::Number; fc::AbstractFloat = 800, win = hamming(91))
+function hpf(
+    s::AbstractArray{<:Number},
+    fs::Number;
+    fc::Number = 800,
+    win::AbstractArray{<:AbstractFloat} = blackman(91)
+)
     df = make_hpf_taps(fc, fs; win = win)
     return filtfilt(df, s)
 end
 
-function make_hpf_taps(fc::AbstractFloat, fs; win = hamming(91))
+function make_hpf_taps(fc::AbstractFloat, fs::Number; win::AbstractArray{<:AbstractFloat} = hamming(91))
     resp = Highpass(fc; fs = fs)
     designmethod = FIRWindow(win)
     return digitalfilter(resp, designmethod)
 end
-make_hpf_taps(fc, fs; kwargs...) = make_hpf_taps(convert(Float64, fc), fs; kwargs...)
+make_hpf_taps(fc::Number, fs; kwargs...) = make_hpf_taps(convert(Float64, fc), fs; kwargs...)
 
 function same_conv_indices(a::Integer, b::Integer)
     offset = floor(Int, (b - 1) / 2)
