@@ -1,7 +1,7 @@
 __precompile__()
 module TSConditioning
 
-using DSP, GLUtilities
+using DSP, GLUtilities, JoinedArrays
 
 export
     hpf,

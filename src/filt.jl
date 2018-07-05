@@ -1,40 +1,52 @@
-function filtfilt_mmap(b::AbstractVector, x::AbstractVector, basedir::AbstractString = tempdir())
+"Apply filter b to signal x using mmaped array"
+function filtfilt_mmap(
+    b::AbstractVector,
+    x::AbstractVector,
+    basedir::AbstractString = tempdir(),
+    autoclean::Bool = true
+)
     nb = length(b)
-    # Only need as much padding as the order of the filter
-    # Convolve b with its reverse
+
+    nx = length(x)
+    n_exp = nb - 1
+    n_offset = 2 * n_exp
+
+    # Convolve b with its reverse, see DSP.jl filtfilt
     newb = filt(b, reverse(b))
-    resize!(newb, 2 * nb - 1)
+    resize!(newb, n_offset + 1)
     for i = 1:nb-1
         newb[nb+i] = newb[nb-i]
     end
 
-    # Extrapolate signal
     T = Base.promote_eltype(b, x)
-    exp_len = length(x) + 2 * nb - 2;
-    (extrapolated, extr_path) = typemmap(Vector{T}, (exp_len,), basedir)
-    (filtered, filt_path) = try
-        DSP.Filters.extrapolate_signal!(extrapolated, 1, x, 1, length(x), nb - 1)
 
-        # Filter
-        (filtered, filt_path) = typemmap(Vector{T}, (length(x) + 2 * nb - 2,), basedir)
-        atexit(() -> rm(filt_path))
-        filt!(filtered, newb, extrapolated)
-        (filtered, filt_path)
-    finally
-        rm(extr_path)
+    # Extrapolate signal
+    extrapolated = extrapolate_signal(x, n_exp)
+
+    # Make output
+    (filtered, filt_path) = typemmap(Vector{T}, (length(x) + n_offset,), basedir)
+
+    if autoclean
+        fp_copy = deepcopy(filt_path)
+        atexit(() -> rm(fp_copy))
     end
-    offset = 2 * nb - 2
-    out = @view filtered[(1 + offset):end]
-    return (out, filt_path, offset)
+
+    # Filter
+    filt!(filtered, newb, extrapolated)
+
+    out = @view filtered[(1 + n_offset):end]
+    return (out, filt_path, n_offset)
 end
+
+"hpf signal x using mmaped array"
 function filtfilt_mmap(
     x::AbstractVector,
     fs::Number,
     args...;
     fc::AbstractFloat = 800.0,
-    win = hamming(91)
+    win::AbstractVector{<:AbstractFloat} = blackman(91)
 )
-    return filtfilt_mmap(make_hpf_taps(fc, fs; win = win), x, args...)
+    return filtfilt_mmap(make_hpf_taps(fc, fs, win), x, args...)
 end
 
 function filtfilt_mmap_path(args...; kwargs...)
@@ -99,16 +111,20 @@ function hpf(
     fc::Number = 800,
     win::AbstractArray{<:AbstractFloat} = blackman(91)
 )
-    df = make_hpf_taps(fc, fs; win = win)
+    df = make_hpf_taps(fc, fs, win)
     return filtfilt(df, s)
 end
 
-function make_hpf_taps(fc::AbstractFloat, fs::Number; win::AbstractArray{<:AbstractFloat} = hamming(91))
-    resp = Highpass(fc; fs = fs)
+function make_hpf_taps(
+    fc::AbstractFloat, fs::Number, win::AbstractArray{<:AbstractFloat} = hamming(91)
+)
+    resp = Highpass(fc; fs = fs)::DSP.Filters.Highpass{Float64}
     designmethod = FIRWindow(win)
-    return digitalfilter(resp, designmethod)
+    return digitalfilter(resp, designmethod)::Vector{Float64}
 end
-make_hpf_taps(fc::Number, fs; kwargs...) = make_hpf_taps(convert(Float64, fc), fs; kwargs...)
+function make_hpf_taps(fc::Number, fs, args...)
+    make_hpf_taps(convert(Float64, fc), fs, args...)
+end
 
 function same_conv_indices(a::Integer, b::Integer)
     offset = floor(Int, (b - 1) / 2)
@@ -171,4 +187,19 @@ function mua(
         rect[i] = frect.(a)
     end
     return smooth(rect, sig, fs, args...; kwargs...)
+end
+
+function extrapolate_signal(sig::AbstractVector{E}, pad_length::Integer) where E
+    if length(sig) < pad_length + 1
+        throw(ArgumentError("sig length must be at least $(pad_length + 1)"))
+    end
+    left_pad = Vector{E}(pad_length)
+    right_pad = Vector{E}(pad_length)
+    xb = 2 * sig[1]
+    xe = 2 * sig[end]
+    @inbounds for i in 1:pad_length
+        left_pad[i] = xb - sig[2 + pad_length - i]
+        right_pad[i] = xe - sig[end - i]
+    end
+    JoinedVectors(left_pad, sig, right_pad)
 end
