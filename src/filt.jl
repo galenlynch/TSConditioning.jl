@@ -43,7 +43,7 @@ function filtfilt_mmap(
     x::AbstractVector,
     fs::Number,
     args...;
-    fc::AbstractFloat = 800.0,
+    fc::Real = 800.0,
     win::AbstractVector{<:AbstractFloat} = blackman(91)
 )
     return filtfilt_mmap(make_hpf_taps(fc, fs, win), x, args...)
@@ -116,7 +116,7 @@ function hpf(
 end
 
 function make_hpf_taps(
-    fc::AbstractFloat, fs::Number, win::AbstractArray{<:AbstractFloat} = hamming(91)
+    fc::AbstractFloat, fs::Number, win::AbstractArray{<:AbstractFloat} = blackman(91)
 )
     resp = Highpass(fc; fs = fs)::DSP.Filters.Highpass{Float64}
     designmethod = FIRWindow(win)
