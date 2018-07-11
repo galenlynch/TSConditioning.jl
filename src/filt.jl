@@ -1,10 +1,10 @@
 "Apply filter b to signal x using mmaped array"
 function filtfilt_mmap(
-    b::AbstractVector,
-    x::AbstractVector,
+    b::AbstractVector{T},
+    x::AbstractVector{T},
     basedir::AbstractString = tempdir(),
     autoclean::Bool = true
-)
+) where T
     nb = length(b)
 
     nx = length(x)
@@ -17,8 +17,6 @@ function filtfilt_mmap(
     for i = 1:nb-1
         newb[nb+i] = newb[nb-i]
     end
-
-    T = Base.promote_eltype(b, x)
 
     # Extrapolate signal
     extrapolated = extrapolate_signal(x, n_exp)
@@ -40,13 +38,14 @@ end
 
 "hpf signal x using mmaped array"
 function filtfilt_mmap(
-    x::AbstractVector,
+    x::AbstractVector{T},
     fs::Number,
     args...;
     fc::Real = 800.0,
     win::AbstractVector{<:AbstractFloat} = blackman(91)
-)
-    return filtfilt_mmap(make_hpf_taps(fc, fs, win), x, args...)
+) where T
+    taps = convert(Vector{T}, make_hpf_taps(fc, fs, win))
+    return filtfilt_mmap(taps, x, args...)
 end
 
 function filtfilt_mmap_path(args...; kwargs...)
