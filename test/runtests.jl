@@ -20,6 +20,21 @@ const A = rand(200)
         end
     end
 
+    @testset "whitening" begin
+        x = rand(3, 200)
+        c = cov(x, 2)
+        w = zcd(c)
+        y = w * (x .- mean(x, 2))
+        wc = cov(y, 2)
+        println(wc)
+
+        x1 = x[1, :]
+        x2 = x[2, :]
+        x3 = x[3, :]
+
+        outs, paths = whiten_mmap([x1, x2, x3], w)
+    end
+
     @testset "filt" begin
         make_hpf_taps(800, 2000)
         hpf(A, 2000)

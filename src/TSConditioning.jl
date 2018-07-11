@@ -20,12 +20,15 @@ export
     xcorr_centered,
     norm_sig_xcorr!,
     norm_sig_xcorr,
+    whiten_mmap,
     xcorr_normed,
     xcorr_ndx_lag,
     xcorr_lags,
-    xcorr_best_lag
+    xcorr_best_lag,
+    zcd
 
 include("util.jl")
 include("filt.jl")
 include("xcorr.jl")
+include("whitening.jl")
 end # module
