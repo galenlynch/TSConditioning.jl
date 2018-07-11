@@ -24,7 +24,7 @@ export
     xcorr_ndx_lag,
     xcorr_lags,
     xcorr_best_lag,
-    zcd
+    zca
 
 include("util.jl")
 include("filt.jl")

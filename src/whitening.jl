@@ -1,4 +1,4 @@
-function zcd(c::AbstractArray{T, 2}) where T
+function zca(c::AbstractArray{T, 2}) where T
     R = div_type(T)
     F = svdfact(c)
     u = F[:U]::Matrix{R}
