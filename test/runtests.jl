@@ -38,8 +38,6 @@ const A = rand(200)
     @testset "filt" begin
         make_hpf_taps(800, 2000)
         hpf(A, 2000)
-
-        filtfilt_mmap()
     end
 
 end
