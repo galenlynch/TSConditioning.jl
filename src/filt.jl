@@ -115,7 +115,7 @@ function hpf(
 end
 
 function make_hpf_taps(
-    fc::AbstractFloat, fs::Number, win::AbstractArray{<:AbstractFloat} = blackman(91)
+    fc::AbstractFloat, fs::Number, win::AbstractArray{<:AbstractFloat} = blackman(151)
 )
     resp = Highpass(fc; fs = fs)::DSP.Filters.Highpass{Float64}
     designmethod = FIRWindow(win)
