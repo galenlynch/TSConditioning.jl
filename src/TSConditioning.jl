@@ -15,7 +15,6 @@ export
     filtfilt_stream!,
     filtfilt_stream,
     filtfilt_stream_path,
-    rev_view,
     center,
     xcorr_centered,
     norm_sig_xcorr!,
