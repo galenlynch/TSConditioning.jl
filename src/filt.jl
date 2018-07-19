@@ -3,7 +3,8 @@ function filtfilt_mmap(
     b::AbstractVector{T},
     x::AbstractVector{T},
     basedir::AbstractString = tempdir(),
-    autoclean::Bool = true
+    autoclean::Bool = true,
+    suffix::AbstractString = "_filtered"
 ) where T
     nb = length(b)
 
@@ -22,7 +23,9 @@ function filtfilt_mmap(
     extrapolated = extrapolate_signal(x, n_exp)
 
     # Make output
-    (filtered, filt_path) = typemmap(Vector{T}, (length(x) + n_offset,), basedir)
+    (filtered, filt_path) = typemmap(
+        Vector{T}, (length(x) + n_offset,); basedir = basedir, suffix = suffix
+    )
 
     if autoclean
         fp_copy = deepcopy(filt_path)
@@ -41,7 +44,7 @@ function filtfilt_mmap(
     x::AbstractVector{T},
     fs::Number,
     args...;
-    fc::Real = 800.0,
+    fc::Real = 300.0,
     win::AbstractVector{<:AbstractFloat} = blackman(91)
 ) where T
     taps = convert(Vector{T}, make_hpf_taps(fc, fs, win))
@@ -91,7 +94,10 @@ function _filtfilt_stream!(sout, f, sigin, nh, buff)
     end
 end
 
-function filtfilt_stream(f::FIRFilter, x::AbstractVector, basedir::AbstractString = pwd(); kwargs...)
+function filtfilt_stream(
+    f::FIRFilter, x::AbstractVector, basedir::AbstractString = tempdir();
+    kwargs...
+)
     T = Base.promote_eltype(f.h, x)
     (out, out_path) = typemmap(Vector{T}, (length(x),), basedir)
     filtfilt_stream!(out, f, x; kwargs...)

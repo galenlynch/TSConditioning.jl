@@ -7,7 +7,9 @@ function zca(c::AbstractArray{T, 2}) where T
 end
 
 function whiten_mmap(
-    xs::AbstractVector{<:AbstractVector{T}}, w::AbstractArray{S, 2}
+    xs::AbstractVector{<:AbstractVector{T}},
+    w::AbstractArray{S, 2},
+    basedir::AbstractString = tempdir()
 ) where {T, S}
     nx = length(xs)
     nx > 0 || throw(ArgumentError("xs is empty"))
@@ -21,7 +23,9 @@ function whiten_mmap(
     outs = Vector{Vector{R}}(nx)
     paths = Vector{String}(nx)
     for i = 1:nx
-        outs[i], paths[i] = typemmap(Vector{R}, (nel,))
+        outs[i], paths[i] = typemmap(
+            Vector{R}, (nel,); basedir = basedir, suffix = "_whitened"
+        )
     end
     _whiten_mmap!(outs, xs, w, nx, nel)
     outs, paths
