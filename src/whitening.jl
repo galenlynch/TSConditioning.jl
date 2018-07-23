@@ -3,7 +3,7 @@ function zca(c::AbstractArray{T, 2}) where T
     F = svdfact(c)
     u = F[:U]::Matrix{R}
     s = F[:S]::Vector{R}
-    u * diagm(s .^ -(1 / 2)) * u'
+    convert(Matrix{R}, u * diagm(s .^ -(1 / 2)) * u')
 end
 
 function whiten_mmap(
