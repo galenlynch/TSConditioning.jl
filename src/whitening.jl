@@ -31,6 +31,17 @@ function whiten_mmap(
     outs, paths
 end
 
+function whiten_mmap(
+    xs::AbstractVector{<:AbstractVector{T}},
+    basedir::AbstractString = tempdir(),
+    args...
+) where T
+    C = collect(Symmetric(cov(xs)))
+    W = zca(C)
+    outs, paths = whiten_mmap(xs, W, basedir, args...)
+    outs, paths, W, C
+end
+
 # assumes outs has at least one element
 # Does no error checking
 function _whiten_mmap!(
