@@ -35,11 +35,11 @@ function whiten_mmap(
         @. paths = joinpath(
             basedir,
             string(
-                basename(tempname()), suffix, '_', R, ".dat"
+                basename(tempname()), suffix, '_', R, '_', nel, ".dat"
             )
         )
     else
-        @. paths = joinpath(basedir, string(fids, suffix, '_', R, ".dat"))
+        @. paths = joinpath(basedir, string(fids, suffix, '_', R, '_', nel, ".dat"))
     end
 
     # Make array to be mutated
