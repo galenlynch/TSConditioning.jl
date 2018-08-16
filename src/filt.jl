@@ -198,8 +198,8 @@ function extrapolate_signal(sig::AbstractVector{E}, pad_length::Integer) where E
     if length(sig) < pad_length + 1
         throw(ArgumentError("sig length must be at least $(pad_length + 1)"))
     end
-    left_pad = Vector{E}(pad_length)
-    right_pad = Vector{E}(pad_length)
+    @compat left_pad = Vector{E}(undef, pad_length)
+    @compat right_pad = Vector{E}(undef, pad_length)
     xb = 2 * sig[1]
     xe = 2 * sig[end]
     @inbounds for i in 1:pad_length

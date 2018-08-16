@@ -1,9 +1,15 @@
 function zca(c::AbstractArray{T, 2}) where T
     R = div_type(T)
-    F = svdfact(c)
-    u = F[:U]::Matrix{R}
-    s = F[:S]::Vector{R}
-    convert(Matrix{R}, u * diagm(s .^ -(1 / 2)) * u')
+    @static if VERSION < v"0.7.0-DEV.2005"
+        F = svdfact(c)
+        u = F[:U]::Matrix{R}
+        s = F[:S]::Vector{R}
+    else
+        F = svd(c)
+        u = F.U
+        s = F.S
+    end
+    convert(Matrix{R}, u * Diagonal(s .^ -(1 / 2)) * u')
 end
 
 function whiten_mmap(
@@ -29,17 +35,24 @@ function whiten_mmap(
 
     # Pre-allocation of ouputs
     R = promote_type(T, S)
-    outs = Vector{Vector{R}}(nx)
-    paths = Vector{String}(nx)
+    @compat outs = Vector{Vector{R}}(undef, nx)
+    @compat paths = Vector{String}(undef, nx)
     if isempty(fids)
-        @. paths = joinpath(
-            basedir,
-            string(
-                basename(tempname()), suffix, '_', R, '_', nel, ".dat"
-            )
+        map!(
+            (::Any) -> joinpath(
+                basedir, string(
+                    basename(tempname()), suffix, '_', R, '_', nel, ".dat"
+                )),
+            paths,
+            1:nx
         )
     else
-        @. paths = joinpath(basedir, string(fids, suffix, '_', R, '_', nel, ".dat"))
+             map!(
+                 fid -> joinpath(basedir, string(
+                     fid, suffix, '_', R, '_', nel, ".dat"
+                 )),
+                 paths, fids
+             )
     end
 
     # Make array to be mutated
@@ -75,15 +88,19 @@ function _whiten_mmap!(
     nx::Integer,
     nel::Integer
 ) where {T, R}
-    means = Vector{div_type(T)}(nx)
-    scratch = Vector{R}(nx)
-    whitened = Vector{R}(nx)
+    @compat means = Vector{div_type(T)}(undef, nx)
+    @compat scratch = Vector{R}(undef, nx)
+    @compat whitened = Vector{R}(undef, nx)
     means .= mean.(xs)
     for elno = 1:nel
         @simd for xno = 1:nx
             @inbounds scratch[xno] = xs[xno][elno] - means[xno]
         end
-        A_mul_B!(whitened, w, scratch)
+        @static if VERSION >= v"0.7.0-DEV.2575"
+            mul!(whitened, w, scratch)
+        else
+            A_mul_B!(whitened, w, scratch)
+        end
         @simd for xno = 1:nx
             @inbounds outs[xno][elno] = whitened[xno]
         end

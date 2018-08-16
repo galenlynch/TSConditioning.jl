@@ -1,7 +1,11 @@
 __precompile__()
 module TSConditioning
 
-using DSP, GLUtilities, JoinedArrays
+using Compat, DSP, GLUtilities, JoinedArrays
+
+@static if VERSION >= v"0.7.0-DEV.2575"
+    using Statistics, LinearAlgebra
+end
 
 export
     hpf,
