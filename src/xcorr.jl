@@ -12,6 +12,11 @@ function norm_sig_xcorr(u)
     return a
 end
 
+"""
+    xcorr_normed(u, v)
+
+Find the normalized circular cross-correlation between vectors `u` and `v`.
+"""
 xcorr_normed(u, v) = xcorr(norm_sig_xcorr(u), norm_sig_xcorr(v))
 
 xcorr_ndx_lag(ndx::Integer, xc_len::Integer) = ndx - cld(xc_len, 2)
