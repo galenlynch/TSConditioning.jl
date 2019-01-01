@@ -1,4 +1,17 @@
-"Apply filter b to signal x using mmaped array"
+"""
+    function filtfilt_mmap(
+        b::AbstractVector{T},
+        x::AbstractVector{T},
+        basedir::AbstractString = tempdir(),
+        autoclean::Bool = true,
+        suffix::AbstractString = "_filtered"
+    ) where T
+
+Apply filter `b` to signal `x` using memory-mapped array. If `autoclean = true`
+then the memory-mapped file will be deleted when Julia exits. The location and
+suffix of the memory-mapped file is specified by `basedir` and `suffix`,
+respectively.
+"""
 function filtfilt_mmap(
     b::AbstractVector{T},
     x::AbstractVector{T},
@@ -39,7 +52,18 @@ function filtfilt_mmap(
     return (out, filt_path, n_offset)
 end
 
-"hpf signal x using mmaped array"
+"""
+    function filtfilt_mmap(
+        x::AbstractVector{T},
+        fs::Number,
+        args...;
+        fc::Real = 300.0,
+        win::AbstractVector{<:AbstractFloat} = blackman(91)
+    ) where T
+
+High pass filter signal x using a memory-mapped array. `args...` are passed to
+`filtfilt_mmap(b::Vector, x::Vector)` method.
+"""
 function filtfilt_mmap(
     x::AbstractVector{T},
     fs::Number,
