@@ -15,6 +15,7 @@ export
     hpf,
     lin_trend,
     make_hpf_taps,
+    make_bandpass,
     mua,
     norm_sig_xcorr!,
     norm_sig_xcorr,

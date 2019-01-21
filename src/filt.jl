@@ -155,6 +155,13 @@ function make_hpf_taps(fc::Number, fs, args...)
     make_hpf_taps(convert(Float64, fc), fs, args...)
 end
 
+function make_bandpass(fs, band_start, band_stop, order)
+    digitalfilter(
+        Bandpass(band_start, band_stop; fs = fs),
+        FIRWindow(blackman(order))
+    )
+end
+
 function same_conv_indices(a::Integer, b::Integer)
     offset = floor(Int, (b - 1) / 2)
     return (offset,  ndx_offset(offset, a))
