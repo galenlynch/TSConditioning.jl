@@ -1,7 +1,7 @@
 name = "TSConditioning"
 uuid = "65444e21-13b1-5fbd-b269-b51e5fd998ef"
 authors = ["Galen Lynch <galen.lynch@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
@@ -16,7 +16,7 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 [compat]
 Compat = "1 - 3"
 DSP = "0.5 - 0.6"
-GLUtilities = "0.0.5 - 0.1"
+GLUtilities = "0.0.5 - 0.2"
 JoinedArrays = "0.0.2 - 0.1"
 MultivariateStats = "0.6 - 0.7"
 julia = "0.6 - 1"
