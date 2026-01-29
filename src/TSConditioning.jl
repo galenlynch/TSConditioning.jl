@@ -7,8 +7,7 @@ using Compat, DSP, GLUtilities, JoinedArrays, Statistics, MultivariateStats
     using Statistics, LinearAlgebra
 end
 
-export
-    center!,
+export center!,
     center,
     detrend!,
     detrend,
