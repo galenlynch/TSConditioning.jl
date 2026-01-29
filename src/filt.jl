@@ -17,8 +17,8 @@ function filtfilt_mmap(
     x::AbstractVector{T},
     basedir::AbstractString = tempdir(),
     autoclean::Bool = true,
-    suffix::AbstractString = "_filtered"
-) where T
+    suffix::AbstractString = "_filtered",
+) where {T}
     nb = length(b)
 
     nx = length(x)
@@ -28,7 +28,7 @@ function filtfilt_mmap(
     # Convolve b with its reverse, see DSP.jl filtfilt
     newb = filt(b, reverse(b))
     resize!(newb, n_offset + 1)
-    for i = 1:nb-1
+    for i = 1:(nb-1)
         newb[nb+i] = newb[nb-i]
     end
 
@@ -36,9 +36,8 @@ function filtfilt_mmap(
     extrapolated = extrapolate_signal(x, n_exp)
 
     # Make output
-    (filtered, filt_path) = typemmap(
-        Vector{T}, (length(x) + n_offset,); basedir = basedir, suffix = suffix
-    )
+    (filtered, filt_path) =
+        typemmap(Vector{T}, (length(x) + n_offset,); basedir = basedir, suffix = suffix)
 
     if autoclean
         fp_copy = deepcopy(filt_path)
@@ -48,7 +47,7 @@ function filtfilt_mmap(
     # Filter
     filt!(filtered, newb, extrapolated)
 
-    out = @view filtered[(1 + n_offset):end]
+    out = @view filtered[(1+n_offset):end]
     return (out, filt_path, n_offset)
 end
 
@@ -69,8 +68,8 @@ function filtfilt_mmap(
     fs::Number,
     args...;
     fc::Real = 300.0,
-    win::AbstractVector{<:AbstractFloat} = blackman(91)
-) where T
+    win::AbstractVector{<:AbstractFloat} = blackman(91),
+) where {T}
     taps = convert(Vector{T}, make_hpf_taps(fc, fs, win))
     return filtfilt_mmap(taps, x, args...)
 end
@@ -86,8 +85,8 @@ function filtfilt_stream!(
     sout::TOut,
     f::FIRFilter,
     sigin::TIn;
-    blocksize::Integer = 1024
-) where {TOut <: AbstractVector, TIn <: AbstractVector}
+    blocksize::Integer = 1024,
+) where {TOut<:AbstractVector,TIn<:AbstractVector}
     # Condition filter
     nb = length(f.h)
     nh = length(f.h)
@@ -101,11 +100,11 @@ function _filtfilt_stream!(sout, f, sigin, nh, buff)
     blocksize = length(buff)
     ns = length(sigin)
     # warm filter state to steady state
-    filt!(view(buff, 1:nh), f, 2 * sigin[1] .+ view(sigin, (nh + 1):-1:2))
+    filt!(view(buff, 1:nh), f, 2 * sigin[1] .+ view(sigin, (nh+1):-1:2))
 
     # Filter the data in blocks
     nfullbin = fld(ns, blocksize)
-    for binno in 1:nfullbin
+    for binno = 1:nfullbin
         bbounds = bin_bounds(binno, blocksize)
         filt!(buff, f, view(sigin, bbounds[1]:bbounds[2]))
         sout[bbounds[1]:bbounds[2]] = buff
@@ -119,15 +118,18 @@ function _filtfilt_stream!(sout, f, sigin, nh, buff)
 end
 
 function filtfilt_stream(
-    f::FIRFilter, x::AbstractVector, basedir::AbstractString = tempdir();
-    kwargs...
+    f::FIRFilter,
+    x::AbstractVector,
+    basedir::AbstractString = tempdir();
+    kwargs...,
 )
     T = Base.promote_eltype(f.h, x)
     (out, out_path) = typemmap(Vector{T}, (length(x),), basedir)
     filtfilt_stream!(out, f, x; kwargs...)
     return (out, out_path)
 end
-filtfilt_stream(f::AbstractVector, args...; kwargs...) = filtfilt_stream(FIRFilter(f), args...; kwargs...)
+filtfilt_stream(f::AbstractVector, args...; kwargs...) =
+    filtfilt_stream(FIRFilter(f), args...; kwargs...)
 
 function filtfilt_stream_path(args...; kwargs...)
     (out, path) = filtfilt_stream(args...; kwargs...)
@@ -138,14 +140,16 @@ function hpf(
     s::AbstractArray{<:Number},
     fs::Number;
     fc::Number = 800,
-    win::AbstractArray{<:AbstractFloat} = blackman(91)
+    win::AbstractArray{<:AbstractFloat} = blackman(91),
 )
     df = make_hpf_taps(fc, fs, win)
     return filtfilt(df, s)
 end
 
 function make_hpf_taps(
-    fc::AbstractFloat, fs::Number, win::AbstractArray{<:AbstractFloat} = blackman(151)
+    fc::AbstractFloat,
+    fs::Number,
+    win::AbstractArray{<:AbstractFloat} = blackman(151),
 )
     resp = Highpass(fc; fs = fs)::DSP.Filters.Highpass{Float64}
     designmethod = FIRWindow(win)
@@ -156,31 +160,30 @@ function make_hpf_taps(fc::Number, fs, args...)
 end
 
 function make_bandpass(fs, band_start, band_stop, order)
-    digitalfilter(
-        Bandpass(band_start, band_stop; fs = fs),
-        FIRWindow(blackman(order))
-    )
+    digitalfilter(Bandpass(band_start, band_stop; fs = fs), FIRWindow(blackman(order)))
 end
 
 function same_conv_indices(a::Integer, b::Integer)
     offset = floor(Int, (b - 1) / 2)
-    return (offset,  ndx_offset(offset, a))
+    return (offset, ndx_offset(offset, a))
 end
 function same_conv_indices(a::AbstractVector, b::AbstractVector)
     return same_conv_indices(length(a), length(b))
 end
 
 function gaussian_kernel(l::Integer, sig)
-    basis = 0:(l - 1)
+    basis = 0:(l-1)
     mu = (l - 1) / 2
     k = exp.(-(basis - mu) .^ 2 / (2 * sig ^ 2))
     return k ./ sum(k)
 end
 
 function smooth(
-    a::A, k::B; portion::Symbol = :same
-) where {T<:Number, S<:Number, A<:AbstractVector{T}, B<:AbstractVector{S}}
-    c = conv(a,k)
+    a::A,
+    k::B;
+    portion::Symbol = :same,
+) where {T<:Number,S<:Number,A<:AbstractVector{T},B<:AbstractVector{S}}
+    c = conv(a, k)
     if portion == :same
         (ib, ie) = same_conv_indices(a, k)
         out = c[ib:ie]
@@ -192,8 +195,10 @@ function smooth(
     return out
 end
 function smooth(
-    a::A, k::AbstractVector; kwargs...
-) where {T<:AbstractVector, A<:AbstractVector{T}}
+    a::A,
+    k::AbstractVector;
+    kwargs...,
+) where {T<:AbstractVector,A<:AbstractVector{T}}
     return map((x) -> smooth(x, k), a)
 end
 function smooth(a, sig::Number, fs = one(sig), l = 6*sig; kwargs...)
@@ -204,20 +209,27 @@ function smooth(a, sig::Number, fs = one(sig), l = 6*sig; kwargs...)
     smooth(a, k; kwargs...)
 end
 
-conv_length(inds::NTuple{2, T}) where T<: Number = sum(length.(inds)) - 1
+conv_length(inds::NTuple{2,T}) where {T<:Number} = sum(length.(inds)) - 1
 
 function mua(
-    a::A, sig::Number, fs::Number = 1,
-    frect::Function = (x) -> x^2, args...
-    ; kwargs...
-) where {T<:Number, A<:AbstractVector{T}}
+    a::A,
+    sig::Number,
+    fs::Number = 1,
+    frect::Function = (x) -> x^2,
+    args...;
+    kwargs...,
+) where {T<:Number,A<:AbstractVector{T}}
     rect = frect.(a)
     return smooth(rect, sig, fs, args...; kwargs...)
 end
 function mua(
-    as::A, sig::Number, fs::Number = 1,
-    frect::Function = (x) -> x.^2, args...; kwargs...
-) where {T<:AbstractVector, A<:AbstractVector{T}}
+    as::A,
+    sig::Number,
+    fs::Number = 1,
+    frect::Function = (x) -> x .^ 2,
+    args...;
+    kwargs...,
+) where {T<:AbstractVector,A<:AbstractVector{T}}
     rect = similar(as)
     for (i, a) in enumerate(as)
         rect[i] = frect.(a)
@@ -225,7 +237,7 @@ function mua(
     return smooth(rect, sig, fs, args...; kwargs...)
 end
 
-function extrapolate_signal(sig::AbstractVector{E}, pad_length::Integer) where E
+function extrapolate_signal(sig::AbstractVector{E}, pad_length::Integer) where {E}
     if length(sig) < pad_length + 1
         throw(ArgumentError("sig length must be at least $(pad_length + 1)"))
     end
@@ -233,9 +245,9 @@ function extrapolate_signal(sig::AbstractVector{E}, pad_length::Integer) where E
     @compat right_pad = Vector{E}(undef, pad_length)
     xb = 2 * sig[1]
     xe = 2 * sig[end]
-    @inbounds for i in 1:pad_length
-        left_pad[i] = xb - sig[2 + pad_length - i]
-        right_pad[i] = xe - sig[end - i]
+    @inbounds for i = 1:pad_length
+        left_pad[i] = xb - sig[2+pad_length-i]
+        right_pad[i] = xe - sig[end-i]
     end
     JoinedVectors(left_pad, sig, right_pad)
 end
