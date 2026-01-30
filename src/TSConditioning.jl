@@ -1,14 +1,16 @@
 __precompile__()
 module TSConditioning
 
-using Compat, DSP, GLUtilities, JoinedArrays, Statistics, MultivariateStats
+using DSP: DSP, Bandpass, FIRFilter, FIRWindow, Highpass, blackman, conv,
+    digitalfilter, filt, filt!, filtfilt, xcorr
+using GLUtilities: GLUtilities, allsame, bin_bounds, div_type, n_ndx, ndx_offset,
+    rev_view, typemmap
+using JoinedArrays: JoinedArrays, JoinedVectors
+using LinearAlgebra: LinearAlgebra, Diagonal, Symmetric, mul!, svd
+using MultivariateStats: MultivariateStats, llsq
+using Statistics: Statistics, cov, mean, std
 
-@static if VERSION >= v"0.7.0-DEV.2575"
-    using Statistics, LinearAlgebra
-end
-
-export
-    center!,
+export center!,
     center,
     detrend!,
     detrend,

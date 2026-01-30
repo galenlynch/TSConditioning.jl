@@ -1,7 +1,7 @@
-# TSConditioning
+# TSConditioning [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://galenlynch.github.io/TSConditioning.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://galenlynch.github.io/TSConditioning.jl/dev/) [![Build Status](https://github.com/galenlynch/TSConditioning.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/galenlynch/TSConditioning.jl/actions/workflows/CI.yml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/galenlynch/TSConditioning.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/galenlynch/TSConditioning.jl)
 
-[![Build Status](https://travis-ci.org/galenlynch/TSConditioning.jl.svg?branch=master)](https://travis-ci.org/galenlynch/TSConditioning.jl)
+Time series signal processing and filtering for neural data.
 
-[![Coverage Status](https://coveralls.io/repos/galenlynch/TSConditioning.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/galenlynch/TSConditioning.jl?branch=master)
+## Citing
 
-[![codecov.io](http://codecov.io/github/galenlynch/TSConditioning.jl/coverage.svg?branch=master)](http://codecov.io/github/galenlynch/TSConditioning.jl?branch=master)
+See [`CITATION.bib`](CITATION.bib) for the relevant reference(s).

@@ -5,7 +5,7 @@ center!(x::AbstractArray) = x .-= mean(x)
 center(x::AbstractArray) = center!(copy(x))
 
 "Fit linear trend to signal"
-function lin_trend(ys::AbstractVector{T}) where T<:AbstractFloat
+function lin_trend(ys::AbstractVector{T}) where {T<:AbstractFloat}
     ny = length(ys)
     basis = reshape(convert(Vector{T}, 1:ny), ny, 1)
     llsq(basis, ys)

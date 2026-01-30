@@ -1,10 +1,5 @@
-using Compat, TSConditioning
-
-@static if VERSION < v"0.7.0-DEV.2005"
-    using Base.Test
-else
-    using Test, Statistics
-end
+using TSConditioning
+using Test, Statistics
 
 const A = rand(200)
 
@@ -20,10 +15,10 @@ const A = rand(200)
 
     @testset "whitening" begin
         x = rand(3, 200)
-        c = Compat.Statistics.cov(x; dims = 2)
+        c = cov(x; dims = 2)
         w = zca(c)
-        y = w * (x .- Compat.Statistics.mean(x; dims = 2))
-        wc = Compat.Statistics.cov(y; dims = 2)
+        y = w * (x .- mean(x; dims = 2))
+        wc = cov(y; dims = 2)
 
         x1 = x[1, :]
         x2 = x[2, :]

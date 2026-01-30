@@ -21,8 +21,7 @@ xcorr_normed(u, v) = xcorr(norm_sig_xcorr(u), norm_sig_xcorr(v))
 
 xcorr_ndx_lag(ndx::Integer, xc_len::Integer) = ndx - cld(xc_len, 2)
 
-xcorr_lags(sig_len::Integer) = -(sig_len-1):(sig_len-1)
+xcorr_lags(sig_len::Integer) = (-(sig_len-1)):(sig_len-1)
 xcorr_lags(a::AbstractVector) = xcorr_lags(length(a))
 
-xcorr_best_lag(xc::AbstractArray) = xcorr_ndx_lag(Compat.argmax(xc), length(xc))
-
+xcorr_best_lag(xc::AbstractArray) = xcorr_ndx_lag(argmax(xc), length(xc))
