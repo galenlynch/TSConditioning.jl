@@ -151,16 +151,16 @@ function make_hpf_taps(
     fs::Number,
     win::AbstractArray{<:AbstractFloat} = blackman(151),
 )
-    resp = Highpass(fc; fs = fs)::DSP.Filters.Highpass{Float64}
+    resp = Highpass(fc)
     designmethod = FIRWindow(win)
-    return digitalfilter(resp, designmethod)::Vector{Float64}
+    return digitalfilter(resp, designmethod; fs = fs)::Vector{Float64}
 end
 function make_hpf_taps(fc::Number, fs, args...)
     make_hpf_taps(convert(Float64, fc), fs, args...)
 end
 
 function make_bandpass(fs, band_start, band_stop, order)
-    digitalfilter(Bandpass(band_start, band_stop; fs = fs), FIRWindow(blackman(order)))
+    digitalfilter(Bandpass(band_start, band_stop), FIRWindow(blackman(order)); fs = fs)
 end
 
 function same_conv_indices(a::Integer, b::Integer)
