@@ -1,7 +1,7 @@
 name = "TSConditioning"
 uuid = "65444e21-13b1-5fbd-b269-b51e5fd998ef"
-authors = ["Galen Lynch <galen@galenlynch.com>"]
 version = "0.1.4"
+authors = ["Galen Lynch <galen@galenlynch.com>"]
 
 [deps]
 DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
@@ -18,4 +18,5 @@ DSP = "0.8"
 JoinedArrays = "0.0.2 - 0.1"
 MultivariateStats = "0.6 - 0.10"
 SignalIndices = "0.1.1"
+Statistics = "1"
 julia = "1.10"
